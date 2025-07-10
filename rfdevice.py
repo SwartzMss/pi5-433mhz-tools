@@ -11,9 +11,6 @@ from typing import Dict
 
 from gpiozero import DigitalInputDevice, DigitalOutputDevice
 
-# Protocol definitions mostly follow the format used by the ``rpi-rf``
-# project.  Timings are expressed as multiples of ``pulselength`` which is
-# measured in microseconds.  ``tolerance`` is used when decoding.
 PROTOCOLS: Dict[int, Dict[str, float]] = {
     1: {
         "pulselength": 350,
@@ -24,66 +21,14 @@ PROTOCOLS: Dict[int, Dict[str, float]] = {
         "one_high": 3,
         "one_low": 1,
         "tolerance": 0.35,
-    },
-    2: {
-        "pulselength": 650,
-        "sync_high": 1,
-        "sync_low": 10,
-        "zero_high": 1,
-        "zero_low": 2,
-        "one_high": 2,
-        "one_low": 1,
-        "tolerance": 0.3,
-    },
-    3: {
-        "pulselength": 100,
-        "sync_high": 30,
-        "sync_low": 71,
-        "zero_high": 4,
-        "zero_low": 11,
-        "one_high": 9,
-        "one_low": 6,
-        "tolerance": 0.25,
-    },
-    4: {
-        "pulselength": 380,
-        "sync_high": 1,
-        "sync_low": 6,
-        "zero_high": 1,
-        "zero_low": 3,
-        "one_high": 3,
-        "one_low": 1,
-        "tolerance": 0.2,
-    },
-    5: {
-        "pulselength": 500,
-        "sync_high": 6,
-        "sync_low": 14,
-        "zero_high": 1,
-        "zero_low": 2,
-        "one_high": 2,
-        "one_low": 1,
-        "tolerance": 0.25,
-    },
-    6: {
-        "pulselength": 200,
-        "sync_high": 1,
-        "sync_low": 31,
-        "zero_high": 1,
-        "zero_low": 2,
-        "one_high": 2,
-        "one_low": 1,
-        "tolerance": 0.4,
-    },
+    }
 }
 
 
 class RfTransmitter:
     """Transmit integer codes using a 433 MHz transmitter."""
 
-    def __init__(
-        self, pin: int, protocol: int = 1, pulse_length: float | None = None
-    ) -> None:
+    def __init__(self, pin: int, protocol: int = 1) -> None:
         if protocol not in PROTOCOLS:
             raise ValueError(f"Unsupported protocol {protocol}")
 
@@ -91,9 +36,7 @@ class RfTransmitter:
         self.protocol = protocol
         # ``pulselength`` is stored in seconds internally
         pl_us = PROTOCOLS[protocol]["pulselength"]
-        self.pulse_length = (
-            pulse_length if pulse_length is not None else pl_us
-        ) / 1_000_000
+        self.pulse_length = pl_us / 1_000_000
 
     def _tx_pulse(self, high_time: float, low_time: float) -> None:
         self.device.on()
