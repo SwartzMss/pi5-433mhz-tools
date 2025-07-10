@@ -11,6 +11,16 @@ from typing import Dict
 
 from gpiozero import DigitalInputDevice, DigitalOutputDevice
 
+# 协议字段说明：
+#
+# - ``pulselength``：基准脉冲长度，单位为微秒。
+# - ``*_high``/``*_low``：分别表示高电平和低电平持续时间的倍数，
+#   以 ``pulselength`` 为单位，其中 ``*`` 可以是 ``sync``、``zero`` 或 ``one``。
+# - ``sync_high``/``sync_low``：帧结束后的同步间隔。
+# - ``zero_high``/``zero_low``：发送二进制 ``0`` 时的时序。
+# - ``one_high``/``one_low``：发送二进制 ``1`` 时的时序。
+# - ``tolerance``：解码时允许的误差范围，例如 ``0.35`` 代表 ±35%%。
+
 PROTOCOLS: Dict[int, Dict[str, float]] = {
     1: {
         "pulselength": 350,
