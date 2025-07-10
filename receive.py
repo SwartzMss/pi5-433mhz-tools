@@ -2,6 +2,7 @@
 """Listen for 433 MHz codes and print them."""
 
 import argparse
+import time
 
 from rfdevice import RfReceiver
 
@@ -23,6 +24,7 @@ def main() -> None:
             code = rx.listen()
             if code is not None:
                 print(f"Received {code}")
+            time.sleep(0.01)
     except KeyboardInterrupt:
         pass
 
