@@ -23,6 +23,10 @@ Listen for codes on GPIO 27:
 python3 receive.py --pin 27 --protocol 1
 ```
 
+Example setup:
+
+![Device](./doc/device.jpg)
+
 ## License
 
 This project is released under the MIT license.
