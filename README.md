@@ -2,8 +2,6 @@
 
 Minimal 433 MHz communication helpers for the Raspberry Pi 5 using
 [gpiozero](https://gpiozero.readthedocs.io/).
-The helper classes support multiple protocols similar to
-[rpi-rf](https://github.com/milaq/rpi-rf).
 
 ## Components
 
