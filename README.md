@@ -25,7 +25,7 @@ python3 receive.py --pin 27 --protocol 1
 
 Example setup:
 
-![Device](./doc/device.jpg)
+<img src="doc/device.jpg" alt="Device" width="300" />
 
 ## License
 
