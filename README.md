@@ -2,6 +2,8 @@
 
 Minimal 433 MHz communication helpers for the Raspberry Pi 5 using
 [gpiozero](https://gpiozero.readthedocs.io/).
+The helper classes support multiple protocols similar to
+[rpi-rf](https://github.com/milaq/rpi-rf).
 
 ## Components
 
@@ -14,13 +16,13 @@ Minimal 433 MHz communication helpers for the Raspberry Pi 5 using
 Send a code on GPIO 17:
 
 ```bash
-python3 sender.py --pin 17 1234
+python3 sender.py --pin 17 --protocol 1 1234
 ```
 
 Listen for codes on GPIO 27:
 
 ```bash
-python3 receive.py --pin 27
+python3 receive.py --pin 27 --protocol 1
 ```
 
 ## License
