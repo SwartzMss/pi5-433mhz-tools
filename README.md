@@ -20,6 +20,23 @@ pip install gpiozero
 - `sender.py` – Send a single integer code.
 - `receive.py` – Listen and print received codes.
 
+## Wiring
+
+Typical wiring for common 433&nbsp;MHz modules:
+
+- **Transmitter**
+  - `VCC` → 5&nbsp;V (GPIO header pin&nbsp;2 or&nbsp;4)
+  - `GND` → any ground pin
+  - `DATA` → GPIO&nbsp;17 by default (`--pin` to change)
+
+- **Receiver**
+  - `VCC` → 5&nbsp;V (pin&nbsp;2 or&nbsp;4)
+  - `GND` → any ground pin
+  - `DATA` → GPIO&nbsp;27 by default (`--pin` to change)
+  - Some boards expose two `DATA` pins; either one works.
+
+A short ~17&nbsp;cm wire connected to the antenna pad can improve range.
+
 ## Usage
 
 Send a code on GPIO 17:
