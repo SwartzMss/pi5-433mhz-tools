@@ -5,16 +5,95 @@ functions to send and receive integer codes over cheap RF modules.
 """
 
 from __future__ import annotations
+
 import time
+from typing import Dict
+
 from gpiozero import DigitalInputDevice, DigitalOutputDevice
+
+# Protocol definitions mostly follow the format used by the ``rpi-rf``
+# project.  Timings are expressed as multiples of ``pulselength`` which is
+# measured in microseconds.  ``tolerance`` is used when decoding.
+PROTOCOLS: Dict[int, Dict[str, float]] = {
+    1: {
+        "pulselength": 350,
+        "sync_high": 1,
+        "sync_low": 31,
+        "zero_high": 1,
+        "zero_low": 3,
+        "one_high": 3,
+        "one_low": 1,
+        "tolerance": 0.35,
+    },
+    2: {
+        "pulselength": 650,
+        "sync_high": 1,
+        "sync_low": 10,
+        "zero_high": 1,
+        "zero_low": 2,
+        "one_high": 2,
+        "one_low": 1,
+        "tolerance": 0.3,
+    },
+    3: {
+        "pulselength": 100,
+        "sync_high": 30,
+        "sync_low": 71,
+        "zero_high": 4,
+        "zero_low": 11,
+        "one_high": 9,
+        "one_low": 6,
+        "tolerance": 0.25,
+    },
+    4: {
+        "pulselength": 380,
+        "sync_high": 1,
+        "sync_low": 6,
+        "zero_high": 1,
+        "zero_low": 3,
+        "one_high": 3,
+        "one_low": 1,
+        "tolerance": 0.2,
+    },
+    5: {
+        "pulselength": 500,
+        "sync_high": 6,
+        "sync_low": 14,
+        "zero_high": 1,
+        "zero_low": 2,
+        "one_high": 2,
+        "one_low": 1,
+        "tolerance": 0.25,
+    },
+    6: {
+        "pulselength": 200,
+        "sync_high": 1,
+        "sync_low": 31,
+        "zero_high": 1,
+        "zero_low": 2,
+        "one_high": 2,
+        "one_low": 1,
+        "tolerance": 0.4,
+    },
+}
 
 
 class RfTransmitter:
     """Transmit integer codes using a 433 MHz transmitter."""
 
-    def __init__(self, pin: int, pulse_length: float = 0.00035) -> None:
+    def __init__(
+        self, pin: int, protocol: int = 1, pulse_length: float | None = None
+    ) -> None:
+        if protocol not in PROTOCOLS:
+            raise ValueError(f"Unsupported protocol {protocol}")
+
         self.device = DigitalOutputDevice(pin)
-        self.pulse_length = pulse_length
+        self.protocol = protocol
+        # ``pulselength`` is stored in seconds internally
+        pl_us = PROTOCOLS[protocol]["pulselength"]
+        self.pulse_length = (
+            pulse_length if pulse_length is not None else pl_us
+        ) / 1_000_000
 
     def _tx_pulse(self, high_time: float, low_time: float) -> None:
         self.device.on()
@@ -22,38 +101,54 @@ class RfTransmitter:
         self.device.off()
         time.sleep(low_time)
 
-    def send_code(self, code: int, protocol: int = 1, repeat: int = 10) -> None:
-        """Send a binary code using a simple On/Off Keying protocol.
+    def send_code(
+        self, code: int, protocol: int | None = None, repeat: int = 10
+    ) -> None:
+        """Send a binary code using the selected protocol.
 
         Parameters
         ----------
         code: int
             The integer code to transmit.
-        protocol: int
-            Protocol number. Currently only protocol 1 is implemented.
+        protocol: int | None
+            Protocol number. If ``None`` the transmitter's default is used.
         repeat: int
             Number of times to repeat the code for reliability.
         """
-        if protocol != 1:
-            raise ValueError("Only protocol 1 is implemented")
+        proto_num = protocol or self.protocol
+        if proto_num not in PROTOCOLS:
+            raise ValueError(f"Unsupported protocol {proto_num}")
 
-        binary = format(code, 'b')
+        proto = PROTOCOLS[proto_num]
+        pl = (
+            self.pulse_length
+            if proto_num == self.protocol
+            else proto["pulselength"] / 1_000_000
+        )
+
+        binary = format(code, "b")
         for _ in range(repeat):
             for bit in binary:
-                if bit == '1':
-                    self._tx_pulse(self.pulse_length, self.pulse_length * 3)
+                if bit == "1":
+                    self._tx_pulse(proto["one_high"] * pl, proto["one_low"] * pl)
                 else:
-                    self._tx_pulse(self.pulse_length, self.pulse_length)
+                    self._tx_pulse(proto["zero_high"] * pl, proto["zero_low"] * pl)
             # sync gap
-            time.sleep(self.pulse_length * 31)
+            self._tx_pulse(proto["sync_high"] * pl, proto["sync_low"] * pl)
 
 
 class RfReceiver:
     """Receive codes from a 433 MHz receiver."""
 
-    def __init__(self, pin: int, threshold: float = 0.001) -> None:
+    def __init__(self, pin: int, protocol: int = 1) -> None:
+        if protocol not in PROTOCOLS:
+            raise ValueError(f"Unsupported protocol {protocol}")
+
         self.device = DigitalInputDevice(pin, pull_up=False)
-        self.threshold = threshold
+        self.protocol = protocol
+        proto = PROTOCOLS[protocol]
+        self.pulse_length = proto["pulselength"] / 1_000_000
+        self.tolerance = proto["tolerance"]
         self.last_code: int | None = None
         self.last_timestamp: float | None = None
 
@@ -71,14 +166,48 @@ class RfReceiver:
                 last_state = state
         return pulses
 
+    def _within(self, actual: float, expected_factor: float) -> bool:
+        expected = expected_factor * self.pulse_length
+        return (
+            expected * (1 - self.tolerance) <= actual <= expected * (1 + self.tolerance)
+        )
+
     def _decode_pulses(self, pulses: list[float]) -> int | None:
         if len(pulses) < 2:
             return None
-        binary = ''
-        for pulse in pulses:
-            binary += '1' if pulse > self.threshold else '0'
+
+        proto = PROTOCOLS[self.protocol]
+        bits = ""
+        i = 0
+        while i + 1 < len(pulses):
+            high = pulses[i]
+            low = pulses[i + 1]
+            i += 2
+
+            if self._within(high, proto["sync_high"]) and self._within(
+                low, proto["sync_low"]
+            ):
+                bits = ""
+                continue
+
+            if self._within(high, proto["zero_high"]) and self._within(
+                low, proto["zero_low"]
+            ):
+                bits += "0"
+                continue
+
+            if self._within(high, proto["one_high"]) and self._within(
+                low, proto["one_low"]
+            ):
+                bits += "1"
+                continue
+
+            return None
+
+        if not bits:
+            return None
         try:
-            return int(binary, 2)
+            return int(bits, 2)
         except ValueError:
             return None
 
