@@ -44,30 +44,18 @@ class RfTransmitter:
         self.device.off()
         time.sleep(low_time)
 
-    def send_code(
-        self, code: int, protocol: int | None = None, repeat: int = 10
-    ) -> None:
-        """Send a binary code using the selected protocol.
+    def send_code(self, code: int, repeat: int = 10) -> None:
+        """Send a binary code using the transmitter's protocol.
 
         Parameters
         ----------
         code: int
             The integer code to transmit.
-        protocol: int | None
-            Protocol number. If ``None`` the transmitter's default is used.
         repeat: int
             Number of times to repeat the code for reliability.
         """
-        proto_num = protocol or self.protocol
-        if proto_num not in PROTOCOLS:
-            raise ValueError(f"Unsupported protocol {proto_num}")
-
-        proto = PROTOCOLS[proto_num]
-        pl = (
-            self.pulse_length
-            if proto_num == self.protocol
-            else proto["pulselength"] / 1_000_000
-        )
+        proto = PROTOCOLS[self.protocol]
+        pl = self.pulse_length
 
         binary = format(code, "b")
         for _ in range(repeat):
