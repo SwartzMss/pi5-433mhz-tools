@@ -15,10 +15,19 @@ def main() -> None:
         "--protocol", type=int, default=1, help="Transmission protocol (default: 1)"
     )
     parser.add_argument("code", type=int, help="Integer code to transmit")
+    parser.add_argument(
+        "--repeat", type=int, default=1, help="Number of times to repeat the code"
+    )
+    parser.add_argument(
+        "--interval",
+        type=float,
+        default=1.0,
+        help="Delay in seconds between repeated transmissions",
+    )
     args = parser.parse_args()
 
     tx = RfTransmitter(args.pin, protocol=args.protocol)
-    tx.send_code(args.code)
+    tx.send_code(args.code, repeat=args.repeat, interval=args.interval)
     print(f"Sent {args.code}")
 
 
