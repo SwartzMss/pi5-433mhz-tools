@@ -54,21 +54,25 @@ class RfTransmitter:
         self.device.off()
         time.sleep(low_time)
 
-    def send_code(self, code: int, repeat: int = 10) -> None:
+    def send_code(self, code: int, repeat: int = 1, interval: float = 1.0) -> None:
         """Send a binary code using the transmitter's protocol.
 
         Parameters
         ----------
         code: int
             The integer code to transmit.
-        repeat: int
-            Number of times to repeat the code for reliability.
+        repeat: int, optional
+            Number of times to repeat the code for reliability. ``1`` sends the
+            code only once.
+        interval: float, optional
+            Extra delay in seconds between repeated transmissions. ``1.0`` adds a
+            one-second pause between repeats.
         """
         proto = PROTOCOLS[self.protocol]
         pl = self.pulse_length
 
         binary = format(code, "b")
-        for _ in range(repeat):
+        for i in range(repeat):
             for bit in binary:
                 if bit == "1":
                     self._tx_pulse(proto["one_high"] * pl, proto["one_low"] * pl)
@@ -76,6 +80,8 @@ class RfTransmitter:
                     self._tx_pulse(proto["zero_high"] * pl, proto["zero_low"] * pl)
             # sync gap
             self._tx_pulse(proto["sync_high"] * pl, proto["sync_low"] * pl)
+            if interval > 0 and i < repeat - 1:
+                time.sleep(interval)
 
 
 class RfReceiver:
