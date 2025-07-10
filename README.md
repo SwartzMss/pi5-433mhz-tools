@@ -3,6 +3,17 @@
 Minimal 433 MHz communication helpers for the Raspberry Pi 5 using
 [gpiozero](https://gpiozero.readthedocs.io/).
 
+## Requirements
+
+- Python 3
+- [`gpiozero`](https://gpiozero.readthedocs.io/)
+
+Install the GPIO Zero library with:
+
+```bash
+pip install gpiozero
+```
+
 ## Components
 
 - `rfdevice.py` – Helper classes for sending and receiving codes.
