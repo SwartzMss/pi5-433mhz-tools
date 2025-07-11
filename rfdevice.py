@@ -11,6 +11,7 @@ from typing import Dict
 
 from gpiozero import DigitalInputDevice, DigitalOutputDevice
 from gpiozero.pins.pigpio import PiGPIOFactory
+import pigpio
 
 # 协议字段说明：
 #
@@ -36,6 +37,20 @@ PROTOCOLS: Dict[int, Dict[str, float]] = {
 }
 
 
+def _create_factory() -> PiGPIOFactory:
+    """Return a connected :class:`PiGPIOFactory` or raise ``RuntimeError``."""
+    if not pigpio.pi().connected:
+        raise RuntimeError(
+            "无法连接 pigpiod，确认是否已执行：sudo systemctl enable --now pigpiod"
+        )
+    try:
+        return PiGPIOFactory()
+    except OSError as exc:
+        raise RuntimeError(
+            "无法连接 pigpiod，确认是否已执行：sudo systemctl enable --now pigpiod"
+        ) from exc
+
+
 class RfTransmitter:
     """Transmit integer codes using a 433 MHz transmitter.
 
@@ -54,11 +69,7 @@ class RfTransmitter:
         if protocol not in PROTOCOLS:
             raise ValueError(f"Unsupported protocol {protocol}")
 
-        factory = PiGPIOFactory()
-        if not factory.pi.connected:
-            raise RuntimeError(
-                "PiGPIOFactory failed to connect to pigpio daemon; is pigpiod running?"
-            )
+        factory = _create_factory()
 
         self.device = DigitalOutputDevice(pin, pin_factory=factory)
         self.protocol = protocol
@@ -120,11 +131,7 @@ class RfReceiver:
         if protocol not in PROTOCOLS:
             raise ValueError(f"Unsupported protocol {protocol}")
 
-        factory = PiGPIOFactory()
-        if not factory.pi.connected:
-            raise RuntimeError(
-                "PiGPIOFactory failed to connect to pigpio daemon; is pigpiod running?"
-            )
+        factory = _create_factory()
 
         self.device = DigitalInputDevice(pin, pull_up=False, pin_factory=factory)
         self.protocol = protocol

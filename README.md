@@ -15,11 +15,13 @@ Install the libraries with:
 pip install gpiozero pigpio
 ```
 
-The ``pigpiod`` daemon must be running. Start it with:
+The ``pigpiod`` daemon must be running. Enable and start it with:
 
 ```bash
-sudo pigpiod
+sudo systemctl enable --now pigpiod
 ```
+
+If ``systemd`` is not used, run ``sudo pigpiod`` manually instead.
 
 ## Components
 
