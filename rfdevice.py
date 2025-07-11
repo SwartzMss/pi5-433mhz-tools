@@ -10,6 +10,7 @@ import time
 from typing import Dict
 
 from gpiozero import DigitalInputDevice, DigitalOutputDevice
+from gpiozero.pins.pigpio import PiGPIOFactory
 
 # 协议字段说明：
 #
@@ -36,13 +37,30 @@ PROTOCOLS: Dict[int, Dict[str, float]] = {
 
 
 class RfTransmitter:
-    """Transmit integer codes using a 433 MHz transmitter."""
+    """Transmit integer codes using a 433 MHz transmitter.
+
+    Parameters
+    ----------
+    pin : int
+        GPIO pin connected to the transmitter.
+    protocol : int, optional
+        Transmission protocol (default ``1``).
+
+    A :class:`PiGPIOFactory` is used internally and must connect to the
+    ``pigpiod`` daemon.
+    """
 
     def __init__(self, pin: int, protocol: int = 1) -> None:
         if protocol not in PROTOCOLS:
             raise ValueError(f"Unsupported protocol {protocol}")
 
-        self.device = DigitalOutputDevice(pin)
+        factory = PiGPIOFactory()
+        if not factory.pi.connected:
+            raise RuntimeError(
+                "PiGPIOFactory failed to connect to pigpio daemon; is pigpiod running?"
+            )
+
+        self.device = DigitalOutputDevice(pin, pin_factory=factory)
         self.protocol = protocol
         # ``pulselength`` is stored in seconds internally
         pl_us = PROTOCOLS[protocol]["pulselength"]
@@ -85,13 +103,30 @@ class RfTransmitter:
 
 
 class RfReceiver:
-    """Receive codes from a 433 MHz receiver."""
+    """Receive codes from a 433 MHz receiver.
+
+    Parameters
+    ----------
+    pin : int
+        GPIO pin connected to the receiver.
+    protocol : int, optional
+        Reception protocol (default ``1``).
+    
+    A :class:`PiGPIOFactory` is always used and must connect to the
+    ``pigpiod`` daemon.
+    """
 
     def __init__(self, pin: int, protocol: int = 1) -> None:
         if protocol not in PROTOCOLS:
             raise ValueError(f"Unsupported protocol {protocol}")
 
-        self.device = DigitalInputDevice(pin, pull_up=False)
+        factory = PiGPIOFactory()
+        if not factory.pi.connected:
+            raise RuntimeError(
+                "PiGPIOFactory failed to connect to pigpio daemon; is pigpiod running?"
+            )
+
+        self.device = DigitalInputDevice(pin, pull_up=False, pin_factory=factory)
         self.protocol = protocol
         proto = PROTOCOLS[protocol]
         self.pulse_length = proto["pulselength"] / 1_000_000

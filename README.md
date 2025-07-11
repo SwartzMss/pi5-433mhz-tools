@@ -7,11 +7,18 @@ Minimal 433 MHz communication helpers for the Raspberry Pi 5 using
 
 - Python 3
 - [`gpiozero`](https://gpiozero.readthedocs.io/)
+- [`pigpio`](http://abyz.me.uk/rpi/pigpio/)
 
-Install the GPIO Zero library with:
+Install the libraries with:
 
 ```bash
-pip install gpiozero
+pip install gpiozero pigpio
+```
+
+The ``pigpiod`` daemon must be running. Start it with:
+
+```bash
+sudo pigpiod
 ```
 
 ## Components
