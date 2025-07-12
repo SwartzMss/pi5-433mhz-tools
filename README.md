@@ -1,27 +1,21 @@
 # pi5-433mhz-tools
 
 Minimal 433 MHz communication helpers for the Raspberry Pi 5 using
-[gpiozero](https://gpiozero.readthedocs.io/).
+[gpiozero](https://gpiozero.readthedocs.io/) with the ``lgpio`` backend.
 
 ## Requirements
 
 - Python 3
 - [`gpiozero`](https://gpiozero.readthedocs.io/)
-- [`pigpio`](http://abyz.me.uk/rpi/pigpio/)
+- [`lgpio`](https://github.com/joan2937/lg)
 
 Install the libraries with:
 
 ```bash
-pip install gpiozero pigpio
+pip install gpiozero lgpio
 ```
 
-The ``pigpiod`` daemon must be running. Enable and start it with:
-
-```bash
-sudo systemctl enable --now pigpiod
-```
-
-If ``systemd`` is not used, run ``sudo pigpiod`` manually instead.
+No background daemon is required when using ``lgpio``.
 
 ## Components
 
