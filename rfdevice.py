@@ -10,8 +10,8 @@ import time
 from typing import Dict
 
 from gpiozero import DigitalInputDevice, DigitalOutputDevice
-from gpiozero.pins.pigpio import PiGPIOFactory
-import pigpio
+from gpiozero.pins.lgpio import LGPIOFactory
+import lgpio
 
 # 协议字段说明：
 #
@@ -37,17 +37,15 @@ PROTOCOLS: Dict[int, Dict[str, float]] = {
 }
 
 
-def _create_factory() -> PiGPIOFactory:
-    """Return a connected :class:`PiGPIOFactory` or raise ``RuntimeError``."""
-    if not pigpio.pi().connected:
-        raise RuntimeError(
-            "无法连接 pigpiod，确认是否已执行：sudo systemctl enable --now pigpiod"
-        )
+def _create_factory() -> LGPIOFactory:
+    """Return an :class:`LGPIOFactory` or raise ``RuntimeError``."""
     try:
-        return PiGPIOFactory()
-    except OSError as exc:
+        h = lgpio.gpiochip_open(0)
+        lgpio.gpiochip_close(h)
+        return LGPIOFactory()
+    except Exception as exc:
         raise RuntimeError(
-            "无法连接 pigpiod，确认是否已执行：sudo systemctl enable --now pigpiod"
+            "无法初始化 lgpio，请确认已安装并具有访问 GPIO 的权限"
         ) from exc
 
 
@@ -61,8 +59,8 @@ class RfTransmitter:
     protocol : int, optional
         Transmission protocol (default ``1``).
 
-    A :class:`PiGPIOFactory` is used internally and must connect to the
-    ``pigpiod`` daemon.
+    A :class:`LGPIOFactory` is used internally and requires access to the
+    system GPIO character device.
     """
 
     def __init__(self, pin: int, protocol: int = 1) -> None:
@@ -123,8 +121,8 @@ class RfReceiver:
     protocol : int, optional
         Reception protocol (default ``1``).
     
-    A :class:`PiGPIOFactory` is always used and must connect to the
-    ``pigpiod`` daemon.
+    A :class:`LGPIOFactory` is always used and requires access to the
+    system GPIO character device.
     """
 
     def __init__(self, pin: int, protocol: int = 1) -> None:
